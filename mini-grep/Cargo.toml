@@ -1,5 +1,5 @@
 [package]
-name = "mini-grep"
+name = "minigrep"
 version = "0.1.0"
 authors = ["Lache Melvin <lache.melvin@gmail.com>"]
 edition = "2018"
