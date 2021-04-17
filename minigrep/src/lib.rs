@@ -19,12 +19,40 @@ impl Config<'_> {
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let file_contents = fs::read_to_string(config.file)?;
+    let search_results = search(&config.search_term, &file_contents);
+    for line in search_results {
+        println!("{}", line);
+    };
     Ok(())
+}
+
+pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+    let mut search_results = Vec::new();
+    for current_line in contents.lines() {
+        if current_line.contains(query) {
+            search_results.push(current_line);
+        }
+    };
+    search_results
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn search_for_query() {
+        let query = "hello";
+        let contents = "\
+Here are some greetings:
+hello there
+howdy
+hello hello
+wassup
+goes well?";
+
+        assert_eq!(vec!["hello there", "hello hello"], search(query, contents));
+    }
 
     #[test]
     fn config_new_creates_config() -> Result<(), String> {
