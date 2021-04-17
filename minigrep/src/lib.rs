@@ -1,8 +1,9 @@
-use std::{fs, error::Error};
+use std::{env, fs, error::Error};
 
 pub struct Config<'a> {
     pub search_term: &'a String,
     pub file: &'a String,
+    pub case_sensitive: bool,
 }
 
 impl Config<'_> {
@@ -12,14 +13,19 @@ impl Config<'_> {
         }
         let search_term = &args[1];
         let file = &args[2];
+        let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
 
-        Ok(Config { search_term, file })
+        Ok(Config { search_term, file, case_sensitive })
     }
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let file_contents = fs::read_to_string(config.file)?;
-    let search_results = search(&config.search_term, &file_contents);
+    let search_results = if config.case_sensitive {
+        search(&config.search_term, &file_contents)
+    } else {
+        search_case_insensitive(&config.search_term, &file_contents)
+    };
     for line in search_results {
         println!("{}", line);
     };
@@ -36,22 +42,48 @@ pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
     search_results
 }
 
+pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+    let query = query.to_lowercase();
+    let mut search_results = Vec::new();
+    for current_line in contents.lines() {
+        let lowercase_line = current_line.to_lowercase();
+        if lowercase_line.contains(&query) {
+            search_results.push(current_line);
+        }
+    };
+    search_results
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn search_for_query() {
+    fn case_sensitive() {
         let query = "hello";
         let contents = "\
 Here are some greetings:
 hello there
 howdy
 hello hello
-wassup
+Hello, good friend!
 goes well?";
 
         assert_eq!(vec!["hello there", "hello hello"], search(query, contents));
+    }
+
+    #[test]
+    fn case_insensitive() {
+        let query = "hElLo";
+        let contents = "\
+Here are some greetings:
+hello there
+howdy
+hello hello
+Hello, good friend!
+goes well?";
+
+        assert_eq!(vec!["hello there", "hello hello", "Hello, good friend!"], search_case_insensitive(query, contents));
     }
 
     #[test]
