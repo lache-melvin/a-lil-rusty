@@ -1,21 +1,30 @@
 use std::{env, fs, error::Error};
 
-pub struct Config<'a> {
-    pub search_term: &'a String,
-    pub file: &'a String,
+pub struct Config {
+    pub search_term: String,
+    pub file: String,
     pub case_sensitive: bool,
 }
 
-impl Config<'_> {
-    pub fn new (args: &[String]) -> Result<Config, &str> {
-        if args.len() < 3 {
-            return Err("Insufficient arguments. Make sure you pass both the string you're searching for and the filepath.")
-        }
-        let search_term = &args[1];
-        let file = &args[2];
+impl Config {
+    pub fn new (mut args: env::Args) -> Result<Config, &'static str> {
+        args.next();
+
+        let search_term = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't receive a search term")
+        };
+        let file = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't receive a file name")
+        };
         let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
 
-        Ok(Config { search_term, file, case_sensitive })
+        Ok(Config {
+            search_term,
+            file,
+            case_sensitive
+        })
     }
 }
 
@@ -33,25 +42,16 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    let mut search_results = Vec::new();
-    for current_line in contents.lines() {
-        if current_line.contains(query) {
-            search_results.push(current_line);
-        }
-    };
-    search_results
+    contents.lines()
+        .filter(|line| line.contains(query))
+        .collect()
 }
 
 pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
     let query = query.to_lowercase();
-    let mut search_results = Vec::new();
-    for current_line in contents.lines() {
-        let lowercase_line = current_line.to_lowercase();
-        if lowercase_line.contains(&query) {
-            search_results.push(current_line);
-        }
-    };
-    search_results
+    contents.lines()
+        .filter(|line| line.to_lowercase().contains(&query))
+        .collect()
 }
 
 #[cfg(test)]
