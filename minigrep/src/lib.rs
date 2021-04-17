@@ -55,33 +55,16 @@ goes well?";
     }
 
     #[test]
-    fn config_new_creates_config() -> Result<(), String> {
-        let test_args = [String::from("binary name"), String::from("search for me"), String::from("testfile.txt")];
-        let config = Config::new(&test_args);
-        match config {
-            Ok(conf) => {
-                assert_eq!(conf.search_term, "search for me");
-                assert_eq!(conf.file, "testfile.txt");
-                Ok(())
-            },
-            Err(e) => {
-                Err(e.to_string())
-            },
-        }
+    fn config_new_creates_config() {
+        let test_args = vec![String::from("binary name"), String::from("search for me"), String::from("testfile.txt")];
+        let config = Config::new(&test_args).unwrap();
+        assert_eq!(config.search_term, "search for me");
+        assert_eq!(config.file, "testfile.txt");
     }
 
     #[test]
-    fn error_if_insufficient_args() -> Result<(), String> {
-        let test_args = [String::from("binary name")];
-        let config = Config::new(&test_args);
-        match config {
-            Ok(_) => {
-                Err("this should not work omg".to_string())
-            },
-            Err(e) => {
-                assert_eq!(e, "Insufficient arguments. Make sure you pass both the string you're searching for and the filepath.");
-                Ok(())
-            },
-        }
+    fn error_if_insufficient_args() {
+        let test_args = vec![String::from("binary name")];
+        assert!(Config::new(&test_args).is_err(), "not enough arguments were passed but you said nothing!");
     }
 }
