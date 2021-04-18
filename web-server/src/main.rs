@@ -23,27 +23,17 @@ fn handle_connection (mut stream: TcpStream) {
 
     let get_home = b"GET / HTTP/1.1\r\n";
 
-    if buffer.starts_with(get_home) {
-        let hello_page = fs::read_to_string("hello.html").unwrap();
-
-        let response = format!(
-            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
-            hello_page.len(),
-            hello_page
-        );
-
-        stream.write(response.as_bytes()).unwrap();
-        stream.flush().unwrap();
+    let (status, filename) = if buffer.starts_with(get_home) {
+        ("HTTP/1.1 200 OK\r\n\r\n", "hello.html")
     } else {
-        let not_found_page = fs::read_to_string("404.html").unwrap();
+        ("HTTP/1.1 404 NOT FOUND\r\n\r\n", "404.html")
+    };
 
-        let response = format!(
-            "HTTP/1.1 404 NOT FOUND\r\n\r\n{}",
-            not_found_page
-        );
+    let contents = fs::read_to_string(filename).unwrap();
+    let response = format!("{}{}", status, contents);
 
-        stream.write(response.as_bytes()).unwrap();
-        stream.flush().unwrap();
-    }
+
+    stream.write(response.as_bytes()).unwrap();
+    stream.flush().unwrap();
 
 }
